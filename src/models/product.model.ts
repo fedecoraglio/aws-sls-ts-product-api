@@ -9,6 +9,7 @@ type ProductType = Partial<{
   metaData: { key: string; content: string }[];
   metaDataKeys?: string[];
   categoryIds: string[];
+  createdAt: string[];
 }>;
 
 type ProductMetaDataType = Readonly<{
@@ -23,6 +24,7 @@ export class ProductModel extends BaseModel {
   metaData: ProductMetaDataType[];
   categoryIds: string[];
   metaDataKeys: string[];
+  createdAt: string;
 
   constructor(productType: ProductType) {
     super();
@@ -32,7 +34,7 @@ export class ProductModel extends BaseModel {
     this.content = productType.content;
     this.metaData = productType.metaData;
     this.metaDataKeys = productType.metaDataKeys;
-    this.categoryIds = productType.categoryIds;
+    this.categoryIds = productType.categoryIds || [];
     this.entityType = EntityName.PRODUCT;
   }
 
@@ -42,14 +44,6 @@ export class ProductModel extends BaseModel {
 
   get sk(): string {
     return `${EntityName.PRODUCT}#${this.productId}`;
-  }
-
-  get gsi1pk(): string {
-    return this.sk;
-  }
-
-  get gsi1sk(): string {
-    return this.sk;
   }
 
   toItem(): Record<string, unknown> {
@@ -63,6 +57,7 @@ export class ProductModel extends BaseModel {
       metaDataKeys: this.metaData?.map(({ key }) => key),
       categoryIds: this.categoryIds,
       entityType: this.entityType,
+      createdAt: new Date().getTime(),
     };
   }
 
@@ -76,6 +71,7 @@ export class ProductModel extends BaseModel {
       metaData: item.metaData,
       metaDataKeys: item.metaDataKeys,
       categoryIds: item.categoryIds,
+      createdAt: item.createdAt,
     });
   }
 }

@@ -16,7 +16,7 @@ export class CategoryService {
     const categoryExits = await this.repository.getByName(dto.name);
     if (categoryExits) {
       throw {
-        message: `The ${dto.name} category is duplicated. Category name must be unique`,
+        message: `${dto.name} category is duplicated. Category name must be unique`,
       };
     }
     try {
@@ -31,11 +31,24 @@ export class CategoryService {
   async update(dto: CategoryDto, id: string): Promise<CategoryModel> {
     let category = null;
     try {
-      const validateCategory = await this.repository.getById(id);
+      const [validateCategory, categoryName] = await Promise.all([
+        this.repository.getById(id),
+        this.repository.getByName(dto.name),
+      ]);
       if (validateCategory) {
+        if (categoryName && id !== categoryName.categoryId) {
+          throw {
+            message: `${dto.name} is duplicated. Category name must be unique`,
+            statusCode: 404,
+          };
+        }
+
         category = await this.repository.update(dto, id);
       } else {
-        throw { message: `The category ${id} id does not exits` };
+        throw {
+          message: `Category not found`,
+          statusCode: 404,
+        };
       }
     } catch (err) {
       console.error('CategoryService-update', err);
@@ -87,7 +100,6 @@ export class CategoryService {
           return { categoryId, productId: id, createdAt: new Date() };
         });
 
-      console.log('PASA!!!!!');
       if (productCategories.length) {
         success = await this.prodCatRepository.create(
           categoryId,

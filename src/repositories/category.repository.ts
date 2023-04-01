@@ -59,15 +59,13 @@ export class CategoryRepository {
       const resp = await this.docClient
         .query({
           TableName: BaseModel.TABLE_NAME,
-          KeyConditionExpression: '#pk =:pk',
-          FilterExpression: '#name =:name',
+          KeyConditionExpression: '#pk = :pk',
+          FilterExpression: '#name = :name',
           ExpressionAttributeValues: {
             ':name': name.trim().toLowerCase(),
             ':pk': EntityName.CATEGORY,
           },
           ExpressionAttributeNames: { '#name': 'name', '#pk': 'pk' },
-          ProjectionExpression: 'categoryId',
-          Limit: 1,
         })
         .promise();
       return resp.Items.length ? CategoryModel.fromItem(resp.Items[0]) : null;

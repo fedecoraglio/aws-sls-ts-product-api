@@ -137,15 +137,13 @@ export class ProductRepository {
       const resp = await this.docClient
         .query({
           TableName: BaseModel.TABLE_NAME,
-          KeyConditionExpression: '#pk =:pk',
-          FilterExpression: '#name =:name',
+          KeyConditionExpression: '#pk = :pk',
+          FilterExpression: '#name = :name',
           ExpressionAttributeValues: {
             ':name': name.trim().toLowerCase(),
             ':pk': EntityName.PRODUCT,
           },
           ExpressionAttributeNames: { '#name': 'name', '#pk': 'pk' },
-          ProjectionExpression: '#name',
-          Limit: 1,
         })
         .promise();
       return resp.Items.length ? ProductModel.fromItem(resp.Items[0]) : null;
@@ -170,7 +168,6 @@ export class ProductRepository {
               productId,
             })
             .toItem(),
-          ConditionExpression: 'attribute_not_exists(PK)',
         })
         .promise();
       return await this.getById(productId);

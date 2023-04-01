@@ -132,10 +132,9 @@ export class ProductCategoryRepository {
           Item: model.toItem(),
         },
       });
-      prodKeys.push({ pk: model.productId, sk: model.productId });
+      prodKeys.push(new ProductModel({ productId: model.productId }).keys());
     });
 
-    console.log('pasa2', prodKeys);
     const currentProdResp = await this.docClient
       .batchGet({
         RequestItems: {
@@ -151,10 +150,14 @@ export class ProductCategoryRepository {
       const idx = item.categoryIds.findIndex(
         (catId: string) => catId === categoryId,
       );
-      if (idx === -1) {
+      if (idx === -1 || categories.length === 0) {
         categories.push(categoryId);
         item.categoryIds = categories;
-        writeRequest.push(new ProductModel(item).toItem());
+        writeRequest.push({
+          PutRequest: {
+            Item: new ProductModel(item).toItem(),
+          },
+        });
       }
     });
     return writeRequest;

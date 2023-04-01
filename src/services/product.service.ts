@@ -15,11 +15,10 @@ export class ProductService {
       const productExits = await this.repository.getByName(dto.name);
       if (productExits) {
         throw {
-          message: `The ${dto.name} product is duplicated. Product name must be unique`,
+          message: `${dto.name} product is duplicated. Product name must be unique`,
         };
       }
       product = await this.repository.create(dto);
-      console.log('product', product);
     } catch (err) {
       console.error('ProductService', err);
       throw err;
@@ -38,6 +37,7 @@ export class ProductService {
             message: `${dto.name} is duplicated. Product name must be unique`,
           };
         }
+
         product = await this.repository.update(dto, id);
       } else {
         throw { message: `The product ${id} id does not exits` };
