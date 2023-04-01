@@ -94,11 +94,11 @@ export class ProductCategoryRepository {
     this.builder.transformDtosToModels(dtos).forEach((model) => {
       if (model) {
         writeRequest.push({
-          PutRequest: {
-            Item: model.toItem(),
+          DeleteRequest: {
+            Key: model.keys(),
           },
         });
-        prodKeys.push({ pk: model.productId, sk: model.productId });
+        prodKeys.push(new ProductModel({ productId: model.productId }).keys());
       }
     });
     const currentProdResp = await this.docClient
@@ -111,11 +111,17 @@ export class ProductCategoryRepository {
       })
       .promise();
     currentProdResp?.Responses[BaseModel.TABLE_NAME].forEach((item) => {
-      const categories = item.categoryIds.filter(
-        (catId: string) => catId !== categoryId,
-      );
-      item.categoryIds = categories;
-      writeRequest.push(new ProductModel(item).toItem());
+      if (item.categoryIds?.length) {
+        const categories = item.categoryIds.filter(
+          (catId: string) => catId !== categoryId,
+        );
+        item.categoryIds = categories;
+        writeRequest.push({
+          DeleteRequest: {
+            Key: new ProductModel(item).keys(),
+          },
+        });
+      }
     });
     return writeRequest;
   }

@@ -84,10 +84,25 @@ export class CategoryService {
     }
   }
 
+  async deleteProductsToCategory(
+    categoryId: string,
+    productIds: string[],
+  ): Promise<ProductCategoryResp> {
+    return await this.bulkProductsToCategory(categoryId, productIds, false);
+  }
+
   async addProductsToCategory(
     categoryId: string,
     productIds: string[],
   ): Promise<ProductCategoryResp> {
+    return await this.bulkProductsToCategory(categoryId, productIds, true);
+  }
+
+  private async bulkProductsToCategory(
+    categoryId: string,
+    productIds: string[],
+    isCreate: boolean,
+  ) {
     let success = false;
     if (!productIds || productIds.length === 0) {
       throw { message: 'You must provide at least one product' };
@@ -101,13 +116,20 @@ export class CategoryService {
         });
 
       if (productCategories.length) {
-        success = await this.prodCatRepository.create(
-          categoryId,
-          productCategories,
-        );
+        if (isCreate) {
+          success = await this.prodCatRepository.create(
+            categoryId,
+            productCategories,
+          );
+        } else {
+          success = await this.prodCatRepository.delete(
+            categoryId,
+            productCategories,
+          );
+        }
       }
     } catch (err) {
-      console.error('CategoryService-addProductsToCategory', err);
+      console.error('CategoryService-bulkProducts', err);
       throw err;
     }
 

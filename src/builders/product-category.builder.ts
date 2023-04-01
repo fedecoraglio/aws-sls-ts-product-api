@@ -8,7 +8,11 @@ export class ProductCategoryBuilder
   private constructor() {}
 
   transformDtoToModel(dto: ProductCategoryDto): ProductCategoryModel {
-    return new ProductCategoryModel({ ...dto });
+    return new ProductCategoryModel({
+      productId: dto.productId,
+      categoryId: dto.categoryId,
+      createdAt: dto.createdAt,
+    });
   }
   transformModelToDto(model: ProductCategoryModel): ProductCategoryDto {
     return {
