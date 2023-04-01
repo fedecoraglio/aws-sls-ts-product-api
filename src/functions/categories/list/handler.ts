@@ -1,9 +1,9 @@
 import { middyfy } from '@libs/lambda';
-import { ProductService } from '@services/product.service';
+import { CategoryService } from '../../../services/category.service';
 
 const listProduct = async (_event, _context) => {
   console.log(`Getting products`);
-  const response = await new ProductService().getAll();
+  const response = await new CategoryService().getAllCategories();
   console.log(`Leaving products`);
   return {
     ...response,

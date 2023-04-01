@@ -1,10 +1,10 @@
 import { middyfy } from '@libs/lambda';
-import { ProductService } from '@services/product.service';
+import { CategoryService } from '@services/category.service';
 
 const updateProduct = async (_event, _context) => {
   const id = _event.pathParameters?.id;
   console.log(`Updating new products ${JSON.stringify(_event.body)}`);
-  const response = await new ProductService().update(_event.body, id);
+  const response = await new CategoryService().update(_event.body, id);
   console.log(`Leaving new products ${JSON.stringify(_event.body)}`);
   return {
     ...response,

@@ -37,7 +37,7 @@ export const apiGatewayResponseMiddleware = (
     APIGatewayProxyResult
   > = async (request) => {
     const { error } = request;
-    let statusCode = 500;
+    let statusCode = 400;
 
     if (error instanceof AppError) {
       statusCode = error.statusCode;

@@ -1,0 +1,69 @@
+{
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "pk",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "sk",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "gsi1pk",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "gsi1sk",
+      "AttributeType": "S"
+    }
+  ],
+  "TableName": "products",
+  "KeySchema": [
+    {
+      "AttributeName": "pk",
+      "KeyType": "HASH"
+    },
+    {
+      "AttributeName": "sk",
+      "KeyType": "RANGE"
+    }
+  ],
+  "GlobalSecondaryIndexes": [
+    {
+      "IndexName": "gsi1",
+      "KeySchema": [
+        {
+          "AttributeName": "gsi1pk",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "gsi1sk",
+          "KeyType": "RANGE"
+        }
+      ],
+      "Projection": {
+        "ProjectionType": "ALL"
+      },
+      "ProvisionedThroughput": {
+        "ReadCapacityUnits": 1,
+        "WriteCapacityUnits": 1
+      }
+    }
+  ],
+  "BillingMode": "PROVISIONED",
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 1,
+    "WriteCapacityUnits": 1
+  },
+  "StreamSpecification": {
+    "StreamEnabled": true,
+    "StreamViewType": "NEW_IMAGE"
+  },
+  "SSESpecification": {
+    "Enabled": true,
+    "SSEType": "AES256",
+    "KMSMasterKeyId": ""
+  },
+  "TableClass": "STANDARD",
+  "DeletionProtectionEnabled": false
+}

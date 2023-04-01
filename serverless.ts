@@ -1,9 +1,17 @@
 import type { AWS } from '@serverless/typescript';
 
+// Categories
 import createProduct from '@functions/products/create';
 import listProduct from '@functions/products/list';
 import detailProduct from '@functions/products/detail';
 import updateProduct from '@functions/products/update';
+// Categories
+import createCategory from '@functions/categories/create';
+import addProductCategory from '@functions/categories/add-products';
+import listCategory from '@functions/categories/list';
+import detailCategory from '@functions/categories/detail';
+import updateCategory from '@functions/categories/update';
+import productsByCategory from '@functions/categories/list-products';
 
 const serverlessConfiguration: AWS = {
   service: 'aws-sls-ts-product-api',
@@ -16,7 +24,7 @@ const serverlessConfiguration: AWS = {
   ],
   provider: {
     name: 'aws',
-    runtime: 'nodejs14.x',
+    runtime: 'nodejs18.x',
     apiGateway: {
       minimumCompressionSize: 1024,
       shouldStartNameWithService: true,
@@ -47,7 +55,18 @@ const serverlessConfiguration: AWS = {
   },
 
   // import the function via paths
-  functions: { createProduct, listProduct, detailProduct, updateProduct },
+  functions: {
+    createProduct,
+    listProduct,
+    detailProduct,
+    updateProduct,
+    listCategory,
+    createCategory,
+    addProductCategory,
+    detailCategory,
+    updateCategory,
+    productsByCategory,
+  },
   package: { individually: true },
   custom: {
     esbuild: {
@@ -55,7 +74,7 @@ const serverlessConfiguration: AWS = {
       minify: false,
       sourcemap: true,
       exclude: ['aws-sdk'],
-      target: 'node14',
+      target: 'node18',
       define: { 'require.resolve': undefined },
       platform: 'node',
       concurrency: 10,
@@ -63,29 +82,76 @@ const serverlessConfiguration: AWS = {
   },
   resources: {
     Resources: {
-      ProductsTable: {
+      products: {
         Type: 'AWS::DynamoDB::Table',
         Properties: {
-          TableName: 'ProductsTable',
+          AttributeDefinitions: [
+            {
+              AttributeName: 'pk',
+              AttributeType: 'S',
+            },
+            {
+              AttributeName: 'sk',
+              AttributeType: 'S',
+            },
+            {
+              AttributeName: 'gsi1pk',
+              AttributeType: 'S',
+            },
+            {
+              AttributeName: 'gsi1sk',
+              AttributeType: 'S',
+            },
+          ],
+          TableName: 'products',
+          KeySchema: [
+            {
+              AttributeName: 'pk',
+              KeyType: 'HASH',
+            },
+            {
+              AttributeName: 'sk',
+              KeyType: 'RANGE',
+            },
+          ],
+          GlobalSecondaryIndexes: [
+            {
+              IndexName: 'gsi1',
+              KeySchema: [
+                {
+                  AttributeName: 'gsi1pk',
+                  KeyType: 'HASH',
+                },
+                {
+                  AttributeName: 'gsi1sk',
+                  KeyType: 'RANGE',
+                },
+              ],
+              Projection: {
+                ProjectionType: 'ALL',
+              },
+              ProvisionedThroughput: {
+                ReadCapacityUnits: 1,
+                WriteCapacityUnits: 1,
+              },
+            },
+          ],
+          BillingMode: 'PROVISIONED',
           ProvisionedThroughput: {
             ReadCapacityUnits: 1,
             WriteCapacityUnits: 1,
           },
-          AttributeDefinitions: [
-            {
-              AttributeName: 'productID',
-              AttributeType: 'S',
-            },
-            {
-              AttributeName: 'productName',
-              AttributeType: 'S',
-              unique: true,
-            },
-          ],
-          KeySchema: {
-            AttributeName: 'productID',
-            KeyType: 'HASH',
+          StreamSpecification: {
+            StreamEnabled: true,
+            StreamViewType: 'NEW_IMAGE',
           },
+          SSESpecification: {
+            Enabled: true,
+            SSEType: 'AES256',
+            KMSMasterKeyId: '',
+          },
+          TableClass: 'STANDARD',
+          DeletionProtectionEnabled: false,
         },
       },
     },

@@ -1,0 +1,5 @@
+export enum EntityName {
+  CATEGORY = 'CATEGORY',
+  PRODUCT = 'PRODUCT',
+  PRODUCT_CATEGORY = 'PRODUCTCATEGORY',
+}
