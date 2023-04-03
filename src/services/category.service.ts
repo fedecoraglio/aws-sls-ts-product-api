@@ -1,10 +1,11 @@
 import { CategoryBuilder } from '@builders/category-builder';
-import { CategoryDto, ListCategoryDto } from '@dtos/category.dtos';
+import { CategoryDto } from '@dtos/category.dtos';
 import { ProductCategoryResp } from '@dtos/product.dtos';
 import { CategoryModel } from '@models/category.model';
 import { CategoryRepository } from '@repositories/category.repository';
 import { ProductCategoryRepository } from '@repositories/product-category.repository';
 import { AppError } from '@libs/app-error';
+import { ListItem, PaginationItem } from '../utils/list-item.response';
 
 export class CategoryService {
   private readonly builder = CategoryBuilder.instance;
@@ -71,15 +72,18 @@ export class CategoryService {
     }
   }
 
-  async getAllCategories(): Promise<ListCategoryDto> {
+  async getAll(
+    pagination: PaginationItem = null,
+  ): Promise<ListItem<CategoryDto>> {
     try {
-      const categoryResp = await this.repository.getAll();
+      const categoryResp = await this.repository.getAll(pagination);
       return {
         count: categoryResp?.count || 0,
         items: this.builder.transformModelsToDtos(categoryResp?.items) || [],
+        lastEvaluatedKey: categoryResp.lastEvaluatedKey,
       };
     } catch (err) {
-      console.error('CategoryService-getAllCategories', err);
+      console.error('CategoryService-getAll', err);
       throw err;
     }
   }

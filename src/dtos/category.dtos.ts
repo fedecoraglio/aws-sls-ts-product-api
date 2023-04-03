@@ -4,8 +4,3 @@ export type CategoryDto = Partial<{
   summary: string;
   content: string;
 }>;
-
-export interface ListCategoryDto {
-  count: number;
-  items: CategoryDto[];
-}

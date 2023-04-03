@@ -1,10 +1,15 @@
-import { DocumentClient, WriteRequest } from 'aws-sdk/clients/dynamodb';
+import {
+  DocumentClient,
+  ItemList,
+  WriteRequest,
+} from 'aws-sdk/clients/dynamodb';
 
 import { ProductModel } from '@models/product.model';
 import { BaseModel } from '@models/base.model';
 import { ProductCategoryDto } from '@dtos/product.dtos';
 import dynamoDBClient from '../dbconnect';
 import { ProductCategoryBuilder } from '@builders/product-category.builder';
+import { ProductCategoryModel } from '@models/product-category.model';
 
 export class ProductCategoryRepository {
   private static instance: ProductCategoryRepository;
@@ -89,28 +94,9 @@ export class ProductCategoryRepository {
     dtos: ProductCategoryDto[],
   ): Promise<WriteRequest[]> {
     const writeRequest: WriteRequest[] = [];
-    const prodKeys = [];
-
-    this.builder.transformDtosToModels(dtos).forEach((model) => {
-      if (model) {
-        writeRequest.push({
-          DeleteRequest: {
-            Key: model.keys(),
-          },
-        });
-        prodKeys.push(new ProductModel({ productId: model.productId }).keys());
-      }
-    });
-    const currentProdResp = await this.docClient
-      .batchGet({
-        RequestItems: {
-          [BaseModel.TABLE_NAME]: {
-            Keys: prodKeys,
-          },
-        },
-      })
-      .promise();
-    currentProdResp?.Responses[BaseModel.TABLE_NAME].forEach((item) => {
+    const models = this.builder.transformDtosToModels(dtos);
+    const productList = await this.getProductsByModels(models);
+    productList.forEach((item: any) => {
       if (item.categoryIds?.length) {
         const categories = item.categoryIds.filter(
           (catId: string) => catId !== categoryId,
@@ -123,6 +109,19 @@ export class ProductCategoryRepository {
         });
       }
     });
+
+    models.forEach((model) => {
+      const productExits =
+        productList.findIndex((p) => p.productId === model.productId) !== -1;
+      if (model && productExits) {
+        writeRequest.push({
+          DeleteRequest: {
+            Key: model.keys(),
+          },
+        });
+      }
+    });
+
     return writeRequest;
   }
 
@@ -131,27 +130,9 @@ export class ProductCategoryRepository {
     dtos: ProductCategoryDto[],
   ): Promise<WriteRequest[]> {
     const writeRequest: WriteRequest[] = [];
-    const prodKeys = [];
-    this.builder.transformDtosToModels(dtos).forEach((model) => {
-      writeRequest.push({
-        PutRequest: {
-          Item: model.toItem(),
-        },
-      });
-      prodKeys.push(new ProductModel({ productId: model.productId }).keys());
-    });
-
-    const currentProdResp = await this.docClient
-      .batchGet({
-        RequestItems: {
-          [BaseModel.TABLE_NAME]: {
-            Keys: prodKeys,
-          },
-        },
-      })
-      .promise();
-
-    currentProdResp?.Responses[BaseModel.TABLE_NAME].forEach((item) => {
+    const models = this.builder.transformDtosToModels(dtos);
+    const productList = await this.getProductsByModels(models);
+    productList.forEach((item: any) => {
       const categories = item.categoryIds ?? [];
       const idx = item.categoryIds.findIndex(
         (catId: string) => catId === categoryId,
@@ -166,6 +147,40 @@ export class ProductCategoryRepository {
         });
       }
     });
+
+    models.forEach((model) => {
+      const productExits =
+        productList.findIndex((p) => p.productId === model.productId) !== -1;
+      if (model && productExits) {
+        writeRequest.push({
+          PutRequest: {
+            Item: model.toItem(),
+          },
+        });
+      }
+    });
+
     return writeRequest;
+  }
+
+  private async getProductsByModels(
+    models: ProductCategoryModel[],
+  ): Promise<ItemList> {
+    const prodKeys = [];
+    models.forEach((model) => {
+      if (model) {
+        prodKeys.push(new ProductModel({ productId: model.productId }).keys());
+      }
+    });
+    const prodResp = await this.docClient
+      .batchGet({
+        RequestItems: {
+          [BaseModel.TABLE_NAME]: {
+            Keys: prodKeys,
+          },
+        },
+      })
+      .promise();
+    return prodResp?.Responses[BaseModel.TABLE_NAME] ?? [];
   }
 }

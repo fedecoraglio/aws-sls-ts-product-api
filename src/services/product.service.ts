@@ -1,9 +1,9 @@
 import { ProductModel } from '@models/product.model';
 import { ProductRepository } from '@repositories/product.repository';
 import { ProductBuilder } from '@builders/product-builder';
-import { ListProductDto, ProductDto } from '@dtos/product.dtos';
-import { ListItem } from '@utils/list-item.response';
-import { AppError } from '../libs/app-error';
+import { ProductDto } from '@dtos/product.dtos';
+import { ListItem, PaginationItem } from '@utils/list-item.response';
+import { AppError } from '@libs/app-error';
 
 export class ProductService {
   private readonly builder = ProductBuilder.instance;
@@ -49,9 +49,16 @@ export class ProductService {
     return product;
   }
 
-  async getAll(): Promise<ListProductDto> {
+  async getAll(
+    pagination: PaginationItem = null,
+  ): Promise<ListItem<ProductDto>> {
     try {
-      return await this.repository.getAll();
+      const productResp = await this.repository.getAll(pagination);
+      return {
+        count: productResp.count,
+        items: this.builder.transformModelsToDtos(productResp.items),
+        lastEvaluatedKey: productResp.lastEvaluatedKey,
+      };
     } catch (err) {
       console.error(err);
       throw err;

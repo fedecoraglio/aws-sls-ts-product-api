@@ -7,7 +7,11 @@ import { CategoryModel } from '@models/category.model';
 import { CategoryDto } from '@dtos/category.dtos';
 import { BaseModel } from '@models/base.model';
 import { EntityName } from '@utils/entity-name.enum';
-import { ListItem } from '@utils/list-item.response';
+import {
+  DEFAULT_LIMIT_PAGINATION,
+  ListItem,
+  PaginationItem,
+} from '@utils/list-item.response';
 
 export class CategoryRepository {
   private static instance: CategoryRepository;
@@ -70,13 +74,20 @@ export class CategoryRepository {
         .promise();
       return resp.Items.length ? CategoryModel.fromItem(resp.Items[0]) : null;
     } catch (err) {
-      console.error('ProductRepository', err);
+      console.error('CategoryRepository', err);
       throw err;
     }
   }
 
-  async getAll(): Promise<ListItem<CategoryModel>> {
+  async getAll(
+    pagination: PaginationItem = null,
+  ): Promise<ListItem<CategoryModel>> {
     try {
+      const exclusiveStartKey = pagination?.lastEvaluatedKey
+        ? new CategoryModel({
+            categoryId: pagination.lastEvaluatedKey,
+          }).keys()
+        : null;
       const resp = await this.docClient
         .query({
           TableName: BaseModel.TABLE_NAME,
@@ -90,13 +101,14 @@ export class CategoryRepository {
             '#pk': 'pk',
             '#entityType': 'entityType',
           },
-          Limit: 10,
+          Limit: pagination?.limit ?? DEFAULT_LIMIT_PAGINATION,
+          ExclusiveStartKey: exclusiveStartKey,
         })
         .promise();
       return {
         count: resp.Items?.length || 0,
-        items:
-          resp.Items?.map((category) => CategoryModel.fromItem(category)) || [],
+        items: resp.Items?.map((cate) => CategoryModel.fromItem(cate)) || [],
+        lastEvaluatedKey: BaseModel.getIdFromKey('sk', resp.LastEvaluatedKey),
       };
     } catch (err) {
       console.error(err);

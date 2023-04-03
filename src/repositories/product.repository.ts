@@ -6,9 +6,12 @@ import { BaseModel } from '@models/base.model';
 import { ProductDto } from '@dtos/product.dtos';
 import { ProductBuilder } from '@builders/product-builder';
 import dynamoDBClient from '../dbconnect';
-import { ListItem } from '@utils/list-item.response';
+import {
+  DEFAULT_LIMIT_PAGINATION,
+  ListItem,
+  PaginationItem,
+} from '@utils/list-item.response';
 import { EntityName } from '@utils/entity-name.enum';
-import { ProductCategoryModel } from '@models/product-category.model';
 
 export class ProductRepository {
   private static instance: ProductRepository;
@@ -40,8 +43,13 @@ export class ProductRepository {
     }
   }
 
-  async getAll(): Promise<ListItem<ProductModel>> {
+  async getAll(
+    pagination: PaginationItem = null,
+  ): Promise<ListItem<ProductModel>> {
     try {
+      const exclusiveStartKey = pagination?.lastEvaluatedKey
+        ? new ProductModel({ productId: pagination.lastEvaluatedKey }).keys()
+        : null;
       const resp = await this.docClient
         .query({
           TableName: BaseModel.TABLE_NAME,
@@ -55,12 +63,14 @@ export class ProductRepository {
             '#pk': 'pk',
             '#entityType': 'entityType',
           },
-          Limit: 10,
+          Limit: pagination?.limit ?? DEFAULT_LIMIT_PAGINATION,
+          ExclusiveStartKey: exclusiveStartKey,
         })
         .promise();
       return {
         count: resp.Items?.length || 0,
         items: resp.Items?.map((prod) => ProductModel.fromItem(prod)) || [],
+        lastEvaluatedKey: BaseModel.getIdFromKey('sk', resp.LastEvaluatedKey),
       };
     } catch (err) {
       console.error(err);
