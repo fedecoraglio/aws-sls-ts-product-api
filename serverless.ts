@@ -1,10 +1,11 @@
 import type { AWS } from '@serverless/typescript';
 
-// Categories
+// Products
 import createProduct from '@functions/products/create';
 import listProduct from '@functions/products/list';
 import detailProduct from '@functions/products/detail';
 import updateProduct from '@functions/products/update';
+import deleteProduct from '@functions/products/delete';
 // Categories
 import createCategory from '@functions/categories/create';
 import addProductCategory from '@functions/categories/products/add';
@@ -61,6 +62,7 @@ const serverlessConfiguration: AWS = {
     listProduct,
     detailProduct,
     updateProduct,
+    deleteProduct,
     listCategory,
     createCategory,
     detailCategory,

@@ -43,6 +43,22 @@ export class ProductRepository {
     }
   }
 
+  async delete(id: string): Promise<ProductModel> {
+    try {
+      const productModel = new ProductModel({ productId: id });
+      await this.docClient
+        .delete({
+          TableName: BaseModel.TABLE_NAME,
+          Key: productModel.keys(),
+        })
+        .promise();
+      return productModel;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
+
   async getAll(
     pagination: PaginationItem = null,
   ): Promise<ListItem<ProductModel>> {

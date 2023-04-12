@@ -9,7 +9,7 @@ export class ProductService {
   private readonly builder = ProductBuilder.instance;
   private readonly repository = ProductRepository.getInstance();
 
-  async create(dto: ProductDto): Promise<ProductModel> {
+  async create(dto: ProductDto): Promise<ProductDto> {
     let product = null;
     try {
       const productExits = await this.repository.getByName(dto.name);
@@ -18,7 +18,9 @@ export class ProductService {
           message: `${dto.name} product is duplicated. Product name must be unique`,
         };
       }
-      product = await this.repository.create(dto);
+      product = this.builder.transformModelToDto(
+        await this.repository.create(dto),
+      );
     } catch (err) {
       console.error('ProductService', err);
       throw err;
@@ -38,10 +40,25 @@ export class ProductService {
           };
         }
 
-        product = await this.repository.update(dto, id);
+        product = this.builder.transformModelToDto(
+          await this.repository.update(dto, id),
+        );
       } else {
         throw { message: `The product ${id} id does not exits` };
       }
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+    return product;
+  }
+
+  async delete(id: string): Promise<ProductModel> {
+    let product = null;
+    try {
+      product = this.builder.transformModelToDto(
+        await this.repository.delete(id),
+      );
     } catch (err) {
       console.error(err);
       throw err;
