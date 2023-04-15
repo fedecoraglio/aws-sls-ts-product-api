@@ -2,7 +2,11 @@ import { ProductModel } from '@models/product.model';
 import { ProductRepository } from '@repositories/product.repository';
 import { ProductBuilder } from '@builders/product-builder';
 import { ProductDto } from '@dtos/product.dtos';
-import { ListItem, PaginationItem } from '@utils/list-item.response';
+import {
+  ListItem,
+  PaginationItem,
+  SimpleSearchParam,
+} from '@utils/list-item.response';
 import { AppError } from '@libs/app-error';
 
 export class ProductService {
@@ -67,10 +71,11 @@ export class ProductService {
   }
 
   async getAll(
+    searchParam: SimpleSearchParam | null = null,
     pagination: PaginationItem = null,
   ): Promise<ListItem<ProductDto>> {
     try {
-      const productResp = await this.repository.getAll(pagination);
+      const productResp = await this.repository.getAll(searchParam, pagination);
       return {
         count: productResp.count,
         items: this.builder.transformModelsToDtos(productResp.items),

@@ -11,6 +11,7 @@ import {
   DEFAULT_LIMIT_PAGINATION,
   ListItem,
   PaginationItem,
+  SimpleSearchParam,
 } from '@utils/list-item.response';
 
 export class CategoryRepository {
@@ -80,6 +81,7 @@ export class CategoryRepository {
   }
 
   async getAll(
+    searchParam: SimpleSearchParam | null = null,
     pagination: PaginationItem = null,
   ): Promise<ListItem<CategoryModel>> {
     try {
@@ -91,18 +93,11 @@ export class CategoryRepository {
       const resp = await this.docClient
         .query({
           TableName: BaseModel.TABLE_NAME,
-          KeyConditionExpression: '#pk = :pk',
-          FilterExpression: '#entityType = :entityType',
-          ExpressionAttributeValues: {
-            ':pk': EntityName.CATEGORY,
-            ':entityType': EntityName.CATEGORY,
-          },
-          ExpressionAttributeNames: {
-            '#pk': 'pk',
-            '#entityType': 'entityType',
-          },
+          IndexName: BaseModel.NAME_INDEX,
+          ...this.createFilterExpressionQuery(searchParam),
           Limit: pagination?.limit ?? DEFAULT_LIMIT_PAGINATION,
           ExclusiveStartKey: exclusiveStartKey,
+          ScanIndexForward: true,
         })
         .promise();
       return {
@@ -114,6 +109,33 @@ export class CategoryRepository {
       console.error(err);
       return null;
     }
+  }
+
+  private createFilterExpressionQuery(searchParam: SimpleSearchParam): {
+    KeyConditionExpression: string;
+    FilterExpression: string;
+    ExpressionAttributeNames: { [key: string]: string };
+    ExpressionAttributeValues: { [key: string]: string };
+  } {
+    const expression = {
+      KeyConditionExpression: '#pk = :pk',
+      FilterExpression: '#entityType = :entityType',
+      ExpressionAttributeValues: {
+        ':pk': EntityName.CATEGORY,
+        ':entityType': EntityName.CATEGORY,
+      },
+      ExpressionAttributeNames: {
+        '#pk': 'pk',
+        '#entityType': 'entityType',
+      },
+    };
+    if (searchParam?.query) {
+      expression.FilterExpression += ' AND begins_with(#name, :name)';
+      expression.ExpressionAttributeValues[':name'] = searchParam.query;
+      expression.ExpressionAttributeNames['#name'] = 'name';
+    }
+
+    return expression;
   }
 
   private async save(

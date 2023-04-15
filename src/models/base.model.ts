@@ -16,6 +16,7 @@ export abstract class BaseModel {
 
   static TABLE_NAME = 'products';
   static GSI1_INDEX = 'gsi1';
+  static NAME_INDEX = 'name-index';
 
   static getIdFromKey(field: string, key: Key) {
     return key && key[field] ? key[field].toString().split('#')[1] : null;

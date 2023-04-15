@@ -15,6 +15,10 @@
     {
       "AttributeName": "gsi1sk",
       "AttributeType": "S"
+    },
+    {
+      "AttributeName": "name",
+      "AttributeType": "S"
     }
   ],
   "TableName": "products",
@@ -47,6 +51,18 @@
       "ProvisionedThroughput": {
         "ReadCapacityUnits": 1,
         "WriteCapacityUnits": 1
+      }
+    }
+  ],
+  "LocalSecondaryIndexes": [
+    {
+      "IndexName": "name-index",
+      "KeySchema": [
+        { "AttributeName": "pk", "KeyType": "HASH" },
+        { "AttributeName": "name", "KeyType": "RANGE" }
+      ],
+      "Projection": {
+        "ProjectionType": "ALL"
       }
     }
   ],

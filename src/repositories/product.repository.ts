@@ -10,6 +10,7 @@ import {
   DEFAULT_LIMIT_PAGINATION,
   ListItem,
   PaginationItem,
+  SimpleSearchParam,
 } from '@utils/list-item.response';
 import { EntityName } from '@utils/entity-name.enum';
 
@@ -60,6 +61,7 @@ export class ProductRepository {
   }
 
   async getAll(
+    searchParam: SimpleSearchParam | null,
     pagination: PaginationItem = null,
   ): Promise<ListItem<ProductModel>> {
     try {
@@ -69,18 +71,11 @@ export class ProductRepository {
       const resp = await this.docClient
         .query({
           TableName: BaseModel.TABLE_NAME,
-          KeyConditionExpression: '#pk = :pk',
-          FilterExpression: '#entityType = :entityType',
-          ExpressionAttributeValues: {
-            ':pk': EntityName.PRODUCT,
-            ':entityType': EntityName.PRODUCT,
-          },
-          ExpressionAttributeNames: {
-            '#pk': 'pk',
-            '#entityType': 'entityType',
-          },
+          IndexName: BaseModel.NAME_INDEX,
+          ...this.createFilterExpressionQuery(searchParam),
           Limit: pagination?.limit ?? DEFAULT_LIMIT_PAGINATION,
           ExclusiveStartKey: exclusiveStartKey,
+          ScanIndexForward: true,
         })
         .promise();
       return {
@@ -179,6 +174,33 @@ export class ProductRepository {
     }
   }
 
+  private createFilterExpressionQuery(searchParam: SimpleSearchParam): {
+    KeyConditionExpression: string;
+    FilterExpression: string;
+    ExpressionAttributeNames: { [key: string]: string };
+    ExpressionAttributeValues: { [key: string]: string };
+  } {
+    const expression = {
+      KeyConditionExpression: '#pk = :pk',
+      FilterExpression: '#entityType = :entityType',
+      ExpressionAttributeValues: {
+        ':pk': EntityName.PRODUCT,
+        ':entityType': EntityName.PRODUCT,
+      },
+      ExpressionAttributeNames: {
+        '#pk': 'pk',
+        '#entityType': 'entityType',
+      },
+    };
+    if (searchParam?.query) {
+      expression.FilterExpression += ' AND begins_with(#name, :name)';
+      expression.ExpressionAttributeValues[':name'] = searchParam.query;
+      expression.ExpressionAttributeNames['#name'] = 'name';
+    }
+
+    return expression;
+  }
+
   private async save(
     dto: ProductDto,
     productId: string = ulid(),
@@ -198,7 +220,7 @@ export class ProductRepository {
         .promise();
       return await this.getById(productId);
     } catch (err) {
-      console.error('ProductRespository', err);
+      console.error('ProductRepository', err);
       throw err;
     }
   }

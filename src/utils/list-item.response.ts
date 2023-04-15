@@ -9,4 +9,8 @@ export type PaginationItem = {
   lastEvaluatedKey?: string | null;
 };
 
+export type SimpleSearchParam = {
+  query: string;
+};
+
 export const DEFAULT_LIMIT_PAGINATION = 10;
