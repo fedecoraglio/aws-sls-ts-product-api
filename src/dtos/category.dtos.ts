@@ -4,3 +4,9 @@ export type CategoryDto = Partial<{
   summary: string;
   content: string;
 }>;
+
+export type CategoryCategoryDto = Readonly<{
+  categoryParentId: string;
+  categoryId?: string;
+  createdAt?: Date;
+}>;

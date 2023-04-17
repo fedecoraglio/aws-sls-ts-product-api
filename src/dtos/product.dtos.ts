@@ -20,6 +20,6 @@ export type ListProductDto = {
   items: ProductDto[];
 };
 
-export type ProductCategoryResp = Readonly<{
+export type SuccessfullyResp = Readonly<{
   success: boolean;
 }>;

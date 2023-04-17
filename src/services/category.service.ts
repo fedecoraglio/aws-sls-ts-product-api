@@ -1,6 +1,6 @@
 import { CategoryBuilder } from '@builders/category-builder';
 import { CategoryDto } from '@dtos/category.dtos';
-import { ProductCategoryResp } from '@dtos/product.dtos';
+import { SuccessfullyResp } from '@dtos/product.dtos';
 import { CategoryModel } from '@models/category.model';
 import { CategoryRepository } from '@repositories/category.repository';
 import { ProductCategoryRepository } from '@repositories/product-category.repository';
@@ -10,11 +10,13 @@ import {
   PaginationItem,
   SimpleSearchParam,
 } from '../utils/list-item.response';
-
+import { CategoryCategoryRepository } from '../repositories/category-category.repository';
 export class CategoryService {
   private readonly builder = CategoryBuilder.instance;
   private readonly repository = CategoryRepository.getInstance();
   private readonly prodCatRepository = ProductCategoryRepository.getInstance();
+  private readonly categoryParentRepository =
+    CategoryCategoryRepository.getInstance();
 
   async create(dto: CategoryDto): Promise<CategoryModel> {
     let category = null;
@@ -62,6 +64,19 @@ export class CategoryService {
     return category;
   }
 
+  async delete(id: string): Promise<CategoryDto> {
+    let product = null;
+    try {
+      product = this.builder.transformModelToDto(
+        await this.repository.delete(id),
+      );
+    } catch (err) {
+      console.error(err);
+      throw new AppError(err?.message ?? 'Error deleting category', 400);
+    }
+    return product;
+  }
+
   async getById(id: string): Promise<CategoryDto> {
     try {
       const model = await this.repository.getById(id);
@@ -96,21 +111,58 @@ export class CategoryService {
     }
   }
 
+  async getCategoriesByCategoryId(
+    categoryId: string,
+  ): Promise<ListItem<CategoryDto>> {
+    try {
+      const resp = await this.repository.getCategoriesByCategoryId(categoryId);
+      return {
+        count: resp.count,
+        items: this.builder.transformModelsToDtos(resp.items),
+      };
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
+
   async deleteProductsToCategory(
     categoryId: string,
     productIds: string[],
-  ): Promise<ProductCategoryResp> {
-    return await this.bulkProductsToCategory(categoryId, productIds, false);
+  ): Promise<SuccessfullyResp> {
+    return await this.batchProductsToCategory(categoryId, productIds, false);
   }
 
   async addProductsToCategory(
     categoryId: string,
     productIds: string[],
-  ): Promise<ProductCategoryResp> {
-    return await this.bulkProductsToCategory(categoryId, productIds, true);
+  ): Promise<SuccessfullyResp> {
+    return await this.batchProductsToCategory(categoryId, productIds, true);
   }
 
-  private async bulkProductsToCategory(
+  async deleteCategoriesToCategory(
+    categoryParentId: string,
+    categoryIds: string[],
+  ): Promise<SuccessfullyResp> {
+    return await this.batchCategoriesToCategory(
+      categoryParentId,
+      categoryIds,
+      false,
+    );
+  }
+
+  async addCategoriesToCategory(
+    categoryParentId: string,
+    categoryIds: string[],
+  ): Promise<SuccessfullyResp> {
+    return await this.batchCategoriesToCategory(
+      categoryParentId,
+      categoryIds,
+      true,
+    );
+  }
+
+  private async batchProductsToCategory(
     categoryId: string,
     productIds: string[],
     isCreate: boolean,
@@ -129,12 +181,12 @@ export class CategoryService {
 
       if (productCategories.length) {
         if (isCreate) {
-          success = await this.prodCatRepository.create(
+          success = await this.prodCatRepository.saveBatch(
             categoryId,
             productCategories,
           );
         } else {
-          success = await this.prodCatRepository.delete(
+          success = await this.prodCatRepository.deleteBatch(
             categoryId,
             productCategories,
           );
@@ -142,6 +194,44 @@ export class CategoryService {
       }
     } catch (err) {
       console.error('CategoryService-bulkProducts', err);
+      throw err;
+    }
+
+    return { success };
+  }
+
+  private async batchCategoriesToCategory(
+    categoryParentId: string,
+    categoriesIds: string[],
+    isCreate: boolean,
+  ) {
+    let success = false;
+    if (!categoriesIds || categoriesIds.length === 0) {
+      throw { message: 'You must provide at least one category' };
+    }
+
+    try {
+      const categories = categoriesIds
+        .filter((id) => !!id)
+        .map((id) => {
+          return { categoryParentId, categoryId: id, createdAt: new Date() };
+        });
+
+      if (categories.length) {
+        if (isCreate) {
+          success = await this.categoryParentRepository.saveBatch(
+            categoryParentId,
+            categories,
+          );
+        } else {
+          success = await this.categoryParentRepository.deleteBatch(
+            categoryParentId,
+            categories,
+          );
+        }
+      }
+    } catch (err) {
+      console.error('CategoryService-bulkCategories', err);
       throw err;
     }
 

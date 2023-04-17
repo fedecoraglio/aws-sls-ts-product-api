@@ -11,9 +11,13 @@ import createCategory from '@functions/categories/create';
 import addProductCategory from '@functions/categories/products/add';
 import deleteProductCategory from '@functions/categories/products/delete';
 import listProductCategory from '@functions/categories/products/list';
+import addCategoryToCategory from '@functions/categories/categories/add';
+import deleteCategoryToCategory from '@functions/categories/categories/delete';
+import listCategoryCategory from '@functions/categories/categories/list';
 import listCategory from '@functions/categories/list';
 import detailCategory from '@functions/categories/detail';
 import updateCategory from '@functions/categories/update';
+import deleteCategory from '@functions/categories/delete';
 
 const serverlessConfiguration: AWS = {
   service: 'aws-sls-ts-product-api',
@@ -67,9 +71,13 @@ const serverlessConfiguration: AWS = {
     createCategory,
     detailCategory,
     updateCategory,
+    deleteCategory,
     addProductCategory,
     listProductCategory,
     deleteProductCategory,
+    addCategoryToCategory,
+    listCategoryCategory,
+    deleteCategoryToCategory,
   },
   package: { individually: true },
   custom: {

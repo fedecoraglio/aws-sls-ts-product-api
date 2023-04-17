@@ -1,5 +1,5 @@
-import { ProductCategoryDto } from '../dtos/product.dtos';
-import { ProductCategoryModel } from '../models/product-category.model';
+import { ProductCategoryDto } from '@dtos/product.dtos';
+import { ProductCategoryModel } from '@models/product-category.model';
 
 export class ProductCategoryBuilder
   implements Builder<ProductCategoryModel, ProductCategoryDto>

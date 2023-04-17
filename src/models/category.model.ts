@@ -1,26 +1,26 @@
 import { EntityName } from '../utils/entity-name.enum';
 import { BaseModel } from './base.model';
-
-type CategoryType = Partial<{
-  categoryId: string;
-  name: string;
-  summary: string;
-  content: string;
-}>;
+import { CategoryType, MetaDataType } from './types.model';
 
 export class CategoryModel extends BaseModel {
   categoryId: string;
+  categoryParentIds: string[];
   name: string;
   summary: string;
   content: string;
+  metaData: MetaDataType[];
+  metaDataKeys?: string[];
+  createdAt: string;
 
-  constructor(productType: CategoryType) {
-    super();
-    this.categoryId = productType.categoryId;
-    this.name = productType.name;
-    this.summary = productType.summary;
-    this.content = productType.content;
-    this.entityType = EntityName.CATEGORY;
+  constructor(type: CategoryType) {
+    super(EntityName.CATEGORY);
+    this.categoryId = type.categoryId;
+    this.categoryParentIds = type.categoryParentIds;
+    this.name = type.name;
+    this.summary = type.summary;
+    this.content = type.content;
+    this.metaData = type.metaData;
+    this.metaDataKeys = type.metaDataKeys;
   }
 
   get pk(): string {
@@ -44,20 +44,23 @@ export class CategoryModel extends BaseModel {
       gsi1pk: this.gsi1pk,
       gsi1sk: this.gsi1sk,
       categoryId: this.categoryId,
+      categoryParentIds: this.categoryParentIds,
       name: this.name,
       summary: this.summary,
       content: this.content,
+      metaData: this.metaData,
+      metaDataKeys: this.metaData?.map(({ key }) => key),
       entityType: this.entityType,
+      createdAt: new Date().getTime(),
     };
   }
 
-  static fromItem(item?: CategoryType): CategoryModel | null {
+  static fromItem(item?: any): CategoryModel | null {
     if (!item) return null;
     return new CategoryModel({
       categoryId: item.categoryId,
-      name: item.name,
-      summary: item.summary,
-      content: item.content,
+      categoryParentIds: item.categoryParentIds,
+      ...item,
     });
   }
 }

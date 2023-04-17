@@ -13,11 +13,10 @@ export class ProductCategoryModel extends BaseModel {
   createdAt: Date;
 
   constructor(productCategoryType: ProductCategoryType) {
-    super();
+    super(EntityName.PRODUCT_CATEGORY);
     this.categoryId = productCategoryType.categoryId;
     this.productId = productCategoryType.productId;
     this.createdAt = productCategoryType.createdAt ?? new Date();
-    this.entityType = EntityName.PRODUCT_CATEGORY;
   }
 
   get pk(): string {
@@ -46,14 +45,5 @@ export class ProductCategoryModel extends BaseModel {
       createdAt: this.createdAt,
       entityType: this.entityType,
     };
-  }
-
-  static fromItem(item?: any): ProductCategoryModel | null {
-    if (!item) return null;
-    return new ProductCategoryModel({
-      categoryId: item.categoryId,
-      productId: item.productId,
-      createdAt: item.createdAt,
-    });
   }
 }

@@ -13,10 +13,12 @@ import {
   PaginationItem,
   SimpleSearchParam,
 } from '@utils/list-item.response';
+import { ProductRepository } from './product.repository';
 
 export class CategoryRepository {
   private static instance: CategoryRepository;
   private readonly builder = CategoryBuilder.instance;
+  private readonly prodRepository = ProductRepository.getInstance();
   private constructor(private readonly docClient: DocumentClient) {}
 
   static getInstance() {
@@ -38,6 +40,28 @@ export class CategoryRepository {
   async update(dto: CategoryDto, id: string): Promise<CategoryModel> {
     try {
       return await this.save(dto, id);
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
+
+  async delete(id: string): Promise<CategoryModel> {
+    try {
+      const categoryModel = new CategoryModel({ categoryId: id });
+      const products = await this.prodRepository.getProductsByCategoryId(id);
+      if (products.count > 0) {
+        throw {
+          message: `Category cannot be deleted because it has products. Please remove products first`,
+        };
+      }
+      await this.docClient
+        .delete({
+          TableName: BaseModel.TABLE_NAME,
+          Key: categoryModel.keys(),
+        })
+        .promise();
+      return categoryModel;
     } catch (err) {
       console.error(err);
       throw err;
@@ -109,6 +133,56 @@ export class CategoryRepository {
       console.error(err);
       return null;
     }
+  }
+
+  async getCategoriesByCategoryId(
+    categoryId: string,
+    pagination: PaginationItem = null,
+  ): Promise<ListItem<CategoryModel>> {
+    const listItem = { count: 0, items: [] };
+    try {
+      const resp = await this.docClient
+        .query({
+          TableName: BaseModel.TABLE_NAME,
+          IndexName: BaseModel.GSI1_INDEX,
+          KeyConditionExpression: '#gsi1pk =:gsi1pk',
+          ExpressionAttributeValues: {
+            ':gsi1pk': `${EntityName.CATEGORY_CATEGORY}#${categoryId}`,
+          },
+          ExpressionAttributeNames: { '#gsi1pk': 'gsi1pk' },
+          Limit: pagination?.limit ?? DEFAULT_LIMIT_PAGINATION,
+        })
+        .promise();
+
+      if (resp.Count > 0) {
+        // Getting all categoryIds
+        const catKeys = resp.Items.filter((item) => !!item.categoryId).map(
+          (item) => new CategoryModel({ categoryId: item.categoryId }).keys(),
+        );
+        // Creating batch gets for all keys
+        const currentProdResp = await this.docClient
+          .batchGet({
+            RequestItems: {
+              [BaseModel.TABLE_NAME]: {
+                Keys: catKeys,
+              },
+            },
+          })
+          .promise();
+        // Preparing product model response
+        const items =
+          currentProdResp?.Responses[BaseModel.TABLE_NAME]?.map((prod) =>
+            CategoryModel.fromItem(prod),
+          ) ?? [];
+
+        listItem.items = items;
+        listItem.count = items.length;
+      }
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+    return listItem;
   }
 
   private createFilterExpressionQuery(searchParam: SimpleSearchParam): {

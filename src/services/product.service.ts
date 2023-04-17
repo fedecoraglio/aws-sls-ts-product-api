@@ -1,4 +1,3 @@
-import { ProductModel } from '@models/product.model';
 import { ProductRepository } from '@repositories/product.repository';
 import { ProductBuilder } from '@builders/product-builder';
 import { ProductDto } from '@dtos/product.dtos';
@@ -32,7 +31,7 @@ export class ProductService {
     return product;
   }
 
-  async update(dto: ProductDto, id: string): Promise<ProductModel> {
+  async update(dto: ProductDto, id: string): Promise<ProductDto> {
     let product = null;
     try {
       const validateProduct = await this.repository.getById(id);
@@ -57,7 +56,7 @@ export class ProductService {
     return product;
   }
 
-  async delete(id: string): Promise<ProductModel> {
+  async delete(id: string): Promise<ProductDto> {
     let product = null;
     try {
       product = this.builder.transformModelToDto(

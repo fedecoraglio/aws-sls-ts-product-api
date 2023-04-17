@@ -91,6 +91,7 @@ export class ProductRepository {
 
   async getProductsByCategoryId(
     categoryId: string,
+    pagination: PaginationItem = null,
   ): Promise<ListItem<ProductModel>> {
     const listItem = { count: 0, items: [] };
     try {
@@ -103,7 +104,7 @@ export class ProductRepository {
             ':gsi1pk': `${EntityName.PRODUCT_CATEGORY}#${categoryId}`,
           },
           ExpressionAttributeNames: { '#gsi1pk': 'gsi1pk' },
-          Limit: 10,
+          Limit: pagination?.limit ?? DEFAULT_LIMIT_PAGINATION,
         })
         .promise();
 

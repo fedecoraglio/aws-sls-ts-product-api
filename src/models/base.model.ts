@@ -1,9 +1,14 @@
 import { Key } from 'aws-sdk/clients/dynamodb';
+import { EntityName } from '@utils/entity-name.enum';
 
 export abstract class BaseModel {
   abstract get pk(): string;
   abstract get sk(): string;
-  entityType: string;
+  entityType: EntityName;
+
+  constructor(entityType: EntityName) {
+    this.entityType = entityType;
+  }
 
   keys(): Record<string, unknown> {
     return {

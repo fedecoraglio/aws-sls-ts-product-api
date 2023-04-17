@@ -10,8 +10,13 @@ import { ProductCategoryDto } from '@dtos/product.dtos';
 import dynamoDBClient from '../dbconnect';
 import { ProductCategoryBuilder } from '@builders/product-category.builder';
 import { ProductCategoryModel } from '@models/product-category.model';
+import { DeleteBatchRepository, SaveBatchRepository } from './types.repository';
 
-export class ProductCategoryRepository {
+export class ProductCategoryRepository
+  implements
+    SaveBatchRepository<ProductCategoryDto>,
+    DeleteBatchRepository<ProductCategoryDto>
+{
   private static instance: ProductCategoryRepository;
   private readonly builder = ProductCategoryBuilder.instance;
   private constructor(private readonly docClient: DocumentClient) {}
@@ -25,7 +30,7 @@ export class ProductCategoryRepository {
     return ProductCategoryRepository.instance;
   }
 
-  async create(
+  async saveBatch(
     categoryId: string,
     dto: ProductCategoryDto[],
   ): Promise<boolean> {
@@ -37,7 +42,7 @@ export class ProductCategoryRepository {
     }
   }
 
-  async delete(
+  async deleteBatch(
     categoryId: string,
     dto: ProductCategoryDto[],
   ): Promise<boolean> {
@@ -66,7 +71,7 @@ export class ProductCategoryRepository {
         .promise();
       return true;
     } catch (err) {
-      console.error('ProductCategoryRespository', err);
+      console.error('ProductCategoryRepository', err);
       throw err;
     }
   }
@@ -84,7 +89,7 @@ export class ProductCategoryRepository {
       await this.docClient.batchWrite(data).promise();
       return true;
     } catch (err) {
-      console.error('ProductCategoryRespository', err);
+      console.error('ProductCategoryRepository', err);
       throw err;
     }
   }
@@ -133,13 +138,13 @@ export class ProductCategoryRepository {
     const models = this.builder.transformDtosToModels(dtos);
     const productList = await this.getProductsByModels(models);
     productList.forEach((item: any) => {
-      const categories = item.categoryIds ?? [];
-      const idx = item.categoryIds.findIndex(
+      const categoriesIds = item.categoryIds ?? [];
+      const idx = categoriesIds.findIndex(
         (catId: string) => catId === categoryId,
       );
-      if (idx === -1 || categories.length === 0) {
-        categories.push(categoryId);
-        item.categoryIds = categories;
+      if (idx === -1 || categoriesIds.length === 0) {
+        categoriesIds.push(categoryId);
+        item.categoryIds = categoriesIds;
         writeRequest.push({
           PutRequest: {
             Item: new ProductModel(item).toItem(),
